@@ -27,15 +27,6 @@
     <property name="logName" value="com.korwe.thecore.router.trace"/>
   </bean>
 
-<!--
-  <bean id="amqp" class="org.apache.camel.component.amqp.AMQPComponent">
-    <property name="connectionFactory">
-      <bean class="org.apache.qpid.client.AMQConnectionFactory">
-        <constructor-arg name="url" value="amqp://${amqp.user}:${amqp.pass}@${amqp.vhost}?brokerlist='tcp://${amqp.host}:${amqp.port}'"/>
-      </bean>
-    </property>
-  </bean>
--->
 
   <bean id="rabbitConnectionFactory" class="com.rabbitmq.client.ConnectionFactory">
     <property name="host" value="${amqp.host}"/>
