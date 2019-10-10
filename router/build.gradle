@@ -18,3 +18,13 @@ dependencies {
 distZip {
     baseName = 'thecore-router'
 }
+
+startScripts {
+    classpath = files('src/dist/__CONF__') + classpath
+    doLast {
+        def windowsScriptFile = file getWindowsScript()
+        def unixScriptFile    = file getUnixScript()
+        windowsScriptFile.text = windowsScriptFile.text.replace('%APP_HOME%\\lib\\__CONF__', '%APP_HOME%\\conf')
+        unixScriptFile.text  = unixScriptFile.text.replace('$APP_HOME/lib/__CONF__', '$APP_HOME/conf')
+    }
+}
