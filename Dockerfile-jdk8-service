@@ -17,4 +17,6 @@ WORKDIR /app
 
 ENTRYPOINT ["/bin/sh"]
 
-CMD ["/app/$APP_NAME/bin/router"]
+ENV app_name $APP_NAME
+
+CMD ["/app/$app_name/bin/router"]
