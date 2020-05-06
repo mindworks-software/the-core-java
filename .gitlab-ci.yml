@@ -6,11 +6,11 @@ variables:
   GRADLE_JVM_ARGS: "-Dorg.gradle.jvmargs=${DEFAULT_JVM_OPTS}"
   PROJECT: "the-core-java"
   # Chnage to client
-  DOCK_REGISTRY: "docker-registry-default.paas.bayportfinance.com"
+  DOCK_REGISTRY: "docker-paas.dbld.tech"
   DOCK_REGISTRY_PATH: "$DOCK_REGISTRY/$PROJECT"
 
   # prefer to set those as group level gitlab vars
-  SERVER_URL: http://artifactory.paas.bayportfinance.com
+  SERVER_URL: http://artifactory-paas.dbld.tech
   SERVER_USERNAME: gitlab
   SERVER_PASSWORD: P@ssw0rd # super secret hash unbrakable
 
@@ -23,7 +23,7 @@ stages:
 
 compile-app-gradle:
   only:
-    - /^*the-core-java$/
+    - /^*rabbitmq$/
   stage: compile
   tags:
     - Runner-01
@@ -41,7 +41,7 @@ compile-app-gradle:
 
 build-app-gradle:
   only:
-    - /^*the-core-java$/
+    - /^*rabbitmq$/
   stage: build
   tags:
     - Runner-01
@@ -61,7 +61,7 @@ build-app-gradle:
 
 test-app-gradle:
   only:
-    - /^*the-core-java$/
+    - /^*rabbitmq$/
   stage: test
   image: openjdk:8-jdk-slim
   tags:
@@ -76,7 +76,7 @@ test-app-gradle:
 
 build-docker-gradle-core-java:
   only:
-    - /^*the-core-java$/
+    - /^*rabbitmq$/
   stage: package
   tags:
     - Runner-01
