@@ -16,7 +16,7 @@ variables:
 
 stages:
   - compile
-  - test
+#   - test
   - build
   - package
   - startup
@@ -51,28 +51,28 @@ build-app-gradle:
   script:
     - ./gradlew build #$GRADLE_JVM_ARGS
   allow_failure: true
-  needs:
-     - job: test-app-gradle
+#   needs:
+#      - job: test-app-gradle
   artifacts:
     name: "gradle-nova-application-$CI_COMMIT_TAG"
     paths:
       - router/build/distributions/*.zip
 
 
-test-app-gradle:
-  only:
-    - /^*rabbitmq$/
-  stage: test
-  image: openjdk:8-jdk-slim
-  tags:
-    - Runner-01
-  script:
-    - ./gradlew test #$GRADLE_JVM_ARGS
-  needs: ["compile-app-gradle"]
-  allow_failure: true
-  artifacts:
-    reports:
-      junit: './*/*/build/test-results/test/TEST-*.xml'
+# test-app-gradle:
+#   only:
+#     - /^*rabbitmq$/
+#   stage: test
+#   image: openjdk:8-jdk-slim
+#   tags:
+#     - Runner-01
+#   script:
+#     - ./gradlew test #$GRADLE_JVM_ARGS
+#   needs: ["compile-app-gradle"]
+#   allow_failure: true
+#   artifacts:
+#     reports:
+#       junit: './*/*/build/test-results/test/TEST-*.xml'
 
 build-docker-gradle-core-java:
   only:
