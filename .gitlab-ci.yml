@@ -6,24 +6,24 @@ variables:
   GRADLE_JVM_ARGS: "-Dorg.gradle.jvmargs=${DEFAULT_JVM_OPTS}"
   PROJECT: "the-core-java"
   # Chnage to client
-  DOCK_REGISTRY: "docker-registry-default.paas.bayportfinance.com"
+  DOCK_REGISTRY: "docker-paas.dbld.tech"
   DOCK_REGISTRY_PATH: "$DOCK_REGISTRY/$PROJECT"
 
   # prefer to set those as group level gitlab vars
-  SERVER_URL: http://artifactory.paas.bayportfinance.com
+  SERVER_URL: http://artifactory-paas.dbld.tech
   SERVER_USERNAME: gitlab
   SERVER_PASSWORD: P@ssw0rd # super secret hash unbrakable
 
 stages:
   - compile
-  - test
+#   - test
   - build
   - package
   - startup
 
 compile-app-gradle:
   only:
-    - /^*the-core-java$/
+    - /^*rabbitmq$/
   stage: compile
   tags:
     - Runner-01
@@ -41,7 +41,7 @@ compile-app-gradle:
 
 build-app-gradle:
   only:
-    - /^*the-core-java$/
+    - /^*rabbitmq$/
   stage: build
   tags:
     - Runner-01
@@ -51,32 +51,32 @@ build-app-gradle:
   script:
     - ./gradlew build #$GRADLE_JVM_ARGS
   allow_failure: true
-  needs:
-     - job: test-app-gradle
+#   needs:
+#      - job: test-app-gradle
   artifacts:
     name: "gradle-nova-application-$CI_COMMIT_TAG"
     paths:
       - router/build/distributions/*.zip
 
 
-test-app-gradle:
-  only:
-    - /^*the-core-java$/
-  stage: test
-  image: openjdk:8-jdk-slim
-  tags:
-    - Runner-01
-  script:
-    - ./gradlew test #$GRADLE_JVM_ARGS
-  needs: ["compile-app-gradle"]
-  allow_failure: true
-  artifacts:
-    reports:
-      junit: './*/*/build/test-results/test/TEST-*.xml'
+# test-app-gradle:
+#   only:
+#     - /^*rabbitmq$/
+#   stage: test
+#   image: openjdk:8-jdk-slim
+#   tags:
+#     - Runner-01
+#   script:
+#     - ./gradlew test #$GRADLE_JVM_ARGS
+#   needs: ["compile-app-gradle"]
+#   allow_failure: true
+#   artifacts:
+#     reports:
+#       junit: './*/*/build/test-results/test/TEST-*.xml'
 
 build-docker-gradle-core-java:
   only:
-    - /^*the-core-java$/
+    - /^*rabbitmq$/
   stage: package
   tags:
     - Runner-01
