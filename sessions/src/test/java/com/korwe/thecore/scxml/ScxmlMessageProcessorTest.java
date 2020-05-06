@@ -25,10 +25,12 @@ import com.korwe.thecore.messages.ServiceRequest;
 import com.korwe.thecore.messages.ServiceResponse;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.Ignore;
 
 /**
  * @author <a href="mailto:nithia.govender@korwe.com>Nithia Govender</a>
  */
+@Ignore
 public class ScxmlMessageProcessorTest {
 
     @Test
