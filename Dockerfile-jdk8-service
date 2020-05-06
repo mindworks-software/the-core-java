@@ -1,0 +1,20 @@
+FROM adoptopenjdk/openjdk8:alpine
+VOLUME /tmp
+
+# Install dependencies
+RUN apk --no-cache add curl bash
+
+ARG APP_NAME=app
+ARG APP_ZIP=target/app.zip
+
+RUN mkdir -pv /app/log /app/config /app/run
+
+COPY ${APP_ZIP} /tmp
+
+RUN unzip -d /app /tmp/*.zip
+
+WORKDIR /app
+
+ENTRYPOINT ["/bin/sh"]
+
+CMD ["/app/$APP_NAME/bin/router"]

@@ -1,0 +1,100 @@
+image: "openjdk:8-jdk-slim"
+
+variables:
+  VERSION: 2.1.0-b3
+  DEFAULT_JVM_OPTS: "-Djavax.net.ssl.trustStore=/etc/bigs/cacerts -Djavax.net.ssl.trustStorePassword=${BIGS_JAVA_CACERTS_PASS}"
+  GRADLE_JVM_ARGS: "-Dorg.gradle.jvmargs=${DEFAULT_JVM_OPTS}"
+  PROJECT: "the-core-java"
+  # Chnage to client
+  DOCK_REGISTRY: "docker-registry-default.paas.bayportfinance.com"
+  DOCK_REGISTRY_PATH: "$DOCK_REGISTRY/$PROJECT"
+
+  # prefer to set those as group level gitlab vars
+  SERVER_URL: http://artifactory.paas.bayportfinance.com
+  SERVER_USERNAME: gitlab
+  SERVER_PASSWORD: P@ssw0rd # super secret hash unbrakable
+
+stages:
+  - compile
+  - test
+  - build
+  - package
+  - startup
+
+compile-app-gradle:
+  only:
+    - /^*the-core-java$/
+  stage: compile
+  tags:
+    - Runner-01
+  image: openjdk:8-jdk-slim
+
+  script:
+    - echo $GRADLE_JVM_ARGS
+    - ./gradlew assemble testClasses #$GRADLE_JVM_ARGS
+  artifacts:
+    name: "gradle-the-core-java-$CI_COMMIT_TAG"
+    paths:
+      - router/build/distributions/*.zip
+
+
+
+build-app-gradle:
+  only:
+    - /^*the-core-java$/
+  stage: build
+  tags:
+    - Runner-01
+  image: openjdk:8-jdk-slim
+
+  #image: ${DOCK_REGISTRY_PATH}/${NOVA_MCR_IMAGE}
+  script:
+    - ./gradlew build #$GRADLE_JVM_ARGS
+  allow_failure: true
+  needs:
+     - job: test-app-gradle
+  artifacts:
+    name: "gradle-nova-application-$CI_COMMIT_TAG"
+    paths:
+      - router/build/distributions/*.zip
+
+
+test-app-gradle:
+  only:
+    - /^*the-core-java$/
+  stage: test
+  image: openjdk:8-jdk-slim
+  tags:
+    - Runner-01
+  script:
+    - ./gradlew test #$GRADLE_JVM_ARGS
+  needs: ["compile-app-gradle"]
+  allow_failure: true
+  artifacts:
+    reports:
+      junit: './*/*/build/test-results/test/TEST-*.xml'
+
+build-docker-gradle-core-java:
+  only:
+    - /^*the-core-java$/
+  stage: package
+  tags:
+    - Runner-01
+  image: docker:19.03.1
+  dependencies:
+    - build-app-gradle
+  services:
+    - docker:19.03.1-dind
+  before_script:
+    - docker login -u "$DOCKER_REGISTRY_USER" -p "$DOCKER_REGISTRY_PASS" "$DOCK_REGISTRY"
+  needs:
+     - job: build-app-gradle
+       artifacts: true
+  script:
+    - docker build --build-arg APP_ZIP="./router/build/distributions/thecore-router-$VERSION.zip" --build-arg APP_NAME="thecore-router-$VERSION" -f Dockerfile-java8 -t thecore-router:$VERSION-${CI_COMMIT_SHA:0:7} .
+    - docker tag thecore-router:$VERSION-${CI_COMMIT_SHA:0:7} "$DOCK_REGISTRY_PATH/thecore-router:$VERSION-${CI_COMMIT_SHA:0:7}"
+    - docker push "$DOCK_REGISTRY_PATH/thecore-router:$VERSION-${CI_COMMIT_SHA:0:7}"
+    - docker tag thecore-router:$VERSION-${CI_COMMIT_SHA:0:7} "$DOCK_REGISTRY_PATH/thecore-router:$VERSION-latest"
+    - docker push "$DOCK_REGISTRY_PATH/thecore-router:$VERSION-latest"
+
+
