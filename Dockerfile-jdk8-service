@@ -19,4 +19,4 @@ ENTRYPOINT ["/bin/sh"]
 
 ENV app_name $APP_NAME
 
-CMD ["echo", "/app/$app_name/bin/router"]
+CMD ["/app/$app_name/bin/router"]

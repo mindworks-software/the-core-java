@@ -94,7 +94,7 @@ build-docker-gradle-core-java:
     - docker build --build-arg APP_ZIP="./router/build/distributions/thecore-router-$VERSION.zip" --build-arg APP_NAME="thecore-router-$VERSION" -f Dockerfile-jdk8-service -t thecore-router:$VERSION-${CI_COMMIT_SHA:0:7} .
     - docker tag thecore-router:$VERSION-${CI_COMMIT_SHA:0:7} "$DOCK_REGISTRY_PATH/thecore-router:$VERSION-${CI_COMMIT_SHA:0:7}"
     - docker push "$DOCK_REGISTRY_PATH/thecore-router:$VERSION-${CI_COMMIT_SHA:0:7}"
-    - docker tag thecore-router:$VERSION-${CI_COMMIT_SHA:0:7} "$DOCK_REGISTRY_PATH/thecore-router:$VERSION-latest"
-    - docker push "$DOCK_REGISTRY_PATH/thecore-router:$VERSION-latest"
+    - docker tag thecore-router:$VERSION-${CI_COMMIT_SHA:0:7} "$DOCK_REGISTRY_PATH/thecore-router:latest"
+    - docker push "$DOCK_REGISTRY_PATH/thecore-router:latest"
 
 
