@@ -19,4 +19,4 @@ WORKDIR /app
 
 ENV app_name $APP_NAME
 
-ENTRYPOINT ["/app/$app_name/bin/router"]
+ENTRYPOINT ["/app/${app_name}/bin/router"]
