@@ -6,11 +6,11 @@ variables:
   GRADLE_JVM_ARGS: "-Dorg.gradle.jvmargs=${DEFAULT_JVM_OPTS}"
   PROJECT: "the-core-java"
   # Chnage to client
-  DOCK_REGISTRY: "docker-paas.dbld.tech"
+  DOCK_REGISTRY: "docker-registry-default.paas.bayportfinance.com"
   DOCK_REGISTRY_PATH: "$DOCK_REGISTRY/$PROJECT"
 
   # prefer to set those as group level gitlab vars
-  SERVER_URL: http://artifactory-paas.dbld.tech
+  SERVER_URL: http://artifactory.paas.bayportfinance.com
   SERVER_USERNAME: gitlab
   SERVER_PASSWORD: P@ssw0rd # super secret hash unbrakable
 
