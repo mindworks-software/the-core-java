@@ -4,9 +4,9 @@ variables:
   VERSION: 2.1.0-b3
   DEFAULT_JVM_OPTS: "-Djavax.net.ssl.trustStore=/etc/bigs/cacerts -Djavax.net.ssl.trustStorePassword=${BIGS_JAVA_CACERTS_PASS}"
   GRADLE_JVM_ARGS: "-Dorg.gradle.jvmargs=${DEFAULT_JVM_OPTS}"
-  PROJECT: "the-core-java"
+  PROJECT: "novalend"
   # Chnage to client
-  DOCK_REGISTRY: "docker-registry-default.paas.bayportfinance.com"
+  DOCK_REGISTRY: "docker-registry-default.paas.bayportfinance.com/"
   DOCK_REGISTRY_PATH: "$DOCK_REGISTRY/$PROJECT"
 
   # prefer to set those as group level gitlab vars
