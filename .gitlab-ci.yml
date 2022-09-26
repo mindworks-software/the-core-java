@@ -1,7 +1,7 @@
 image: "openjdk:8-jdk-slim"
 
 variables:
-  VERSION: 2.1.0-b3
+  VERSION: 2.1.0-b4
   DEFAULT_JVM_OPTS: "-Djavax.net.ssl.trustStore=/etc/bigs/cacerts -Djavax.net.ssl.trustStorePassword=${BIGS_JAVA_CACERTS_PASS}"
   GRADLE_JVM_ARGS: "-Dorg.gradle.jvmargs=${DEFAULT_JVM_OPTS}"
   PROJECT: "novalend"

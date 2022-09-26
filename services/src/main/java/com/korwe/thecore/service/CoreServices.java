@@ -56,7 +56,7 @@ public class CoreServices {
             @Override
             public void run() {
                 for (Service service: services) {
-                    service.stop();
+                    service.stopAsync();
                 }
 
                 try {
@@ -69,7 +69,7 @@ public class CoreServices {
         });
 
         for (Service service : services) {
-            service.start();
+            service.startAsync();
         }
 
         try {

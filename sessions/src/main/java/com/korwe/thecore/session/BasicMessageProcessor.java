@@ -20,7 +20,6 @@
 package com.korwe.thecore.session;
 
 import com.korwe.thecore.api.CoreSender;
-import com.korwe.thecore.api.MessageQueue;
 import com.korwe.thecore.messages.CoreMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

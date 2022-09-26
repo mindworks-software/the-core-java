@@ -1,10 +1,10 @@
 dependencies {
-    compile project(':api')
-    compile 'com.google.guava:guava:13.+'
-    compile 'com.jolbox:bonecp:0.7.1.RELEASE'
-    compile 'com.google.inject:guice:3.0'
-    compile 'com.google.inject.extensions:guice-servlet:3.0'
-    compile 'javax.servlet:servlet-api:2.5'
+    implementation project(':api')
+    implementation 'com.google.guava:guava:31.1-jre'
+    implementation 'com.jolbox:bonecp:0.8.0.RELEASE'
+    implementation 'com.google.inject:guice:5.1.0'
+    implementation 'com.google.inject.extensions:guice-servlet:5.1.0'
+    implementation 'javax.servlet:servlet-api:2.5'
 }
 
 jar {

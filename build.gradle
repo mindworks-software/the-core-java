@@ -1,12 +1,12 @@
 allprojects {
     apply plugin: 'java'
-    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
 
 
-    sourceCompatibility = 1.7
+    sourceCompatibility = JavaVersion.VERSION_11
 
     group = 'com.korwe'
-    version = '2.1.0-b3'
+    version = '2.1.0-b4'
 
     repositories {
          mavenLocal()
@@ -14,7 +14,7 @@ allprojects {
     }
 
     dependencies {
-        testCompile 'junit:junit:4.10'
+        testImplementation 'junit:junit:4.13.2'
     }
 
     test {
@@ -26,13 +26,13 @@ apply plugin: 'application'
 mainClassName = 'com.korwe.thecore.service.CoreServices'
 
 dependencies {
-    runtime project(':services')
-    runtime project(':sessions')
-    runtime project(':webcore')
-    runtime project(':api')
-    runtime project(':router')
-    runtime 'postgresql:postgresql:8.4-702.jdbc4'
-    runtime 'org.slf4j:slf4j-log4j12:1.7.21'
+    runtimeOnly project(':services')
+    runtimeOnly project(':sessions')
+    runtimeOnly project(':webcore')
+    runtimeOnly project(':api')
+    runtimeOnly project(':router')
+    runtimeOnly 'org.postgresql:postgresql:42.5.0'
+    runtimeOnly 'org.slf4j:slf4j-reload4j:2.0.2'
 }
 
 distZip {

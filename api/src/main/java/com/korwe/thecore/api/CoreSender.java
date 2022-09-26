@@ -164,6 +164,9 @@ public class CoreSender implements ShutdownListener, RecoveryListener {
             catch (IOException e) {
                 LOG.error("Error sending message", e);
             }
+            finally {
+                close();
+            }
         }
         else {
             LOG.error("Cannot send to explicitly addressed message direct point to point queue");
