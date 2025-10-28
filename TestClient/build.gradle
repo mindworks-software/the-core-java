@@ -1,4 +1,5 @@
 dependencies {
     implementation project(':api')
-    runtimeOnly 'org.slf4j:slf4j-reload4j:2.0.2'
+    runtimeOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1'
+    runtimeOnly 'org.apache.logging.log4j:log4j-core:2.23.1'
 }

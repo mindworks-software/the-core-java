@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%t %d %p [%c{4}] %m%n"/>
+        </Console>
+
+        <RollingFile name="roller" fileName="${sys:log.dir}/core-router.log"
+                     filePattern="${sys:log.dir}/core-router.log.%i">
+            <PatternLayout pattern="%d %p %t [%c{4}] %m%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="50MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="40"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="com.korwe" level="debug" additivity="false">
+            <AppenderRef ref="roller"/>
+        </Logger>
+
+        <Logger name="org.apache" level="info" additivity="false">
+            <AppenderRef ref="roller"/>
+        </Logger>
+
+        <Root level="info">
+            <AppenderRef ref="roller"/>
+        </Root>
+    </Loggers>
+</Configuration>

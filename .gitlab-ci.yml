@@ -1,18 +1,13 @@
-image: "openjdk:8-jdk-slim"
+image: "openjdk:11-jdk-slim"
 
 variables:
-  VERSION: 2.1.0-b4
-  DEFAULT_JVM_OPTS: "-Djavax.net.ssl.trustStore=/etc/bigs/cacerts -Djavax.net.ssl.trustStorePassword=${BIGS_JAVA_CACERTS_PASS}"
+  VERSION: 4.0.0-SNAPSHOT
+  DEFAULT_JVM_OPTS: "-Djavax.net.ssl.trustStore=/etc/bigs/cacerts -Djavax.net.ssl.trustStorePassword=${BIGS_JAVA_CACERTS_PASS} -Dhttps.protocols=TLSv1.2"
   GRADLE_JVM_ARGS: "-Dorg.gradle.jvmargs=${DEFAULT_JVM_OPTS}"
   PROJECT: "novalend"
   # Chnage to client
   DOCK_REGISTRY: "docker-registry-default.paas.bayportfinance.com"
   DOCK_REGISTRY_PATH: "$DOCK_REGISTRY/$PROJECT"
-
-  # prefer to set those as group level gitlab vars
-  SERVER_URL: http://artifactory.paas.bayportfinance.com
-  SERVER_USERNAME: gitlab
-  SERVER_PASSWORD: P@ssw0rd # super secret hash unbrakable
 
 stages:
   - compile
@@ -21,31 +16,43 @@ stages:
   - package
   - startup
 
+.default_rules: &default_rules
+  rules:
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
+      when: never
+    - if: $CI_COMMIT_TAG
+      variables:
+        VERSION: "$${CI_COMMIT_REF_NAME}-$${CI_COMMIT_SHA:0:7}"
+    - if: $CI_COMMIT_REF_NAME =~ /^release-.*/
+      variables:
+        VERSION: "$${CI_COMMIT_REF_NAME:8}-RC-$${CI_COMMIT_SHA:0:7}"
+    - if: $CI_COMMIT_REF_NAME =~ /^qa\/.*/
+      variables:
+        VERSION: "$${CI_COMMIT_REF_NAME:3}-QA-$${CI_COMMIT_SHA:0:7}"
+    - if: $CI_COMMIT_REF_PROTECTED == "true"
+    - when: always
+
+
 compile-app-gradle:
-  only:
-    - /^*rabbitmq$/
+  <<: *default_rules
   stage: compile
   tags:
     - Runner-01
-  image: openjdk:8-jdk-slim
 
   script:
     - echo $GRADLE_JVM_ARGS
-    - ./gradlew assemble testClasses #$GRADLE_JVM_ARGS
+    - ./gradlew assemble testClasses $GRADLE_JVM_ARGS
   artifacts:
     name: "gradle-the-core-java-$CI_COMMIT_TAG"
     paths:
       - router/build/distributions/*.zip
 
 
-
 build-app-gradle:
-  only:
-    - /^*rabbitmq$/
+  <<: *default_rules
   stage: build
   tags:
     - Runner-01
-  image: openjdk:8-jdk-slim
 
   #image: ${DOCK_REGISTRY_PATH}/${NOVA_MCR_IMAGE}
   script:
@@ -75,8 +82,10 @@ build-app-gradle:
 #       junit: './*/*/build/test-results/test/TEST-*.xml'
 
 build-docker-gradle-core-java:
-  only:
-    - /^*rabbitmq$/
+  rules:
+    - if: $CI_COMMIT_TAG
+      variables:
+        VERSION: $CI_COMMIT_TAG
   stage: package
   tags:
     - Runner-01
