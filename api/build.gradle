@@ -11,13 +11,18 @@ dependencies {
 }
 
 jar {
-    baseName = 'thecore-api'
+    archiveBaseName = 'thecore-api'
 }
+
+java {
+    withSourcesJar()
+}
+
 
 publishing {
     publications {
         maven(MavenPublication) {
-            artifactId = jar.baseName
+            artifactId = jar.archiveBaseName
 
             from components.java
         }

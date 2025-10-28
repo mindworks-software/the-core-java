@@ -6,7 +6,7 @@ allprojects {
     sourceCompatibility = JavaVersion.VERSION_11
 
     group = 'com.korwe'
-    version = '2.1.0-b4'
+    version = '4.0.0-SNAP{SHOT'
 
     repositories {
          mavenLocal()
@@ -26,16 +26,13 @@ apply plugin: 'application'
 mainClassName = 'com.korwe.thecore.service.CoreServices'
 
 dependencies {
-    runtimeOnly project(':services')
-    runtimeOnly project(':sessions')
-    runtimeOnly project(':webcore')
     runtimeOnly project(':api')
     runtimeOnly project(':router')
-    runtimeOnly 'org.postgresql:postgresql:42.5.0'
-    runtimeOnly 'org.slf4j:slf4j-reload4j:2.0.2'
+    runtimeOnly 'org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1'
+    runtimeOnly 'org.apache.logging.log4j:log4j-core:2.23.1'
 }
 
 distZip {
-    baseName = 'thecore-javaservices'
+    archiveBaseName = 'thecore-javaservices'
 }
 

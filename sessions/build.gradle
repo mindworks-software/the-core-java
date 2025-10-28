@@ -7,5 +7,5 @@ dependencies {
 }
 
 jar {
-    baseName = 'thecore-sessionmanager'
+    archiveBaseName = 'thecore-sessionmanager'
 }
