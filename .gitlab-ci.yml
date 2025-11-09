@@ -11,8 +11,9 @@ variables:
 
 stages:
   - compile
-#   - test
+  - test
   - build
+  - publish
   - package
   - startup
 
@@ -21,14 +22,8 @@ stages:
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
       when: never
     - if: $CI_COMMIT_TAG
-      variables:
-        VERSION: "$${CI_COMMIT_REF_NAME}-$${CI_COMMIT_SHA:0:7}"
     - if: $CI_COMMIT_REF_NAME =~ /^release-.*/
-      variables:
-        VERSION: "$${CI_COMMIT_REF_NAME:8}-RC-$${CI_COMMIT_SHA:0:7}"
     - if: $CI_COMMIT_REF_NAME =~ /^qa\/.*/
-      variables:
-        VERSION: "$${CI_COMMIT_REF_NAME:3}-QA-$${CI_COMMIT_SHA:0:7}"
     - if: $CI_COMMIT_REF_PROTECTED == "true"
     - when: always
 
@@ -66,26 +61,70 @@ build-app-gradle:
       - router/build/distributions/*.zip
 
 
-# test-app-gradle:
-#   only:
-#     - /^*rabbitmq$/
-#   stage: test
-#   image: openjdk:8-jdk-slim
-#   tags:
-#     - Runner-01
-#   script:
-#     - ./gradlew test #$GRADLE_JVM_ARGS
-#   needs: ["compile-app-gradle"]
-#   allow_failure: true
-#   artifacts:
-#     reports:
-#       junit: './*/*/build/test-results/test/TEST-*.xml'
+test-app-gradle:
+  <<: *default_rules
+  stage: test
+  image: openjdk:11-jdk-slim
+  tags:
+    - Runner-01
+  script:
+    - ./gradlew test
+  needs: ["compile-app-gradle"]
+  allow_failure: false
+  artifacts:
+    reports:
+      junit: './*/*/build/test-results/test/TEST-*.xml'
+
+publish-artifacts-gradle:
+  <<: *default_rules
+  stage: publish
+  tags:
+    - Runner-01
+  before_script:
+    - |
+      # Build VERSION dynamically based on branch type
+      # Convention:
+      #   Git tags (production): Use tag as-is, NO SHA (e.g., "4.0.0", "v4.0.0")
+      #   Release branches (RC): Include RC suffix + SHA (e.g., "4.0.0-RC-abc1234")
+      #   QA branches (testing): Include QA suffix + SHA (e.g., "feature-QA-abc1234")
+      #   Other branches: Use SNAPSHOT
+
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        # Production release: Use tag as-is, NO SHA appended
+        export VERSION="${CI_COMMIT_TAG}"
+      elif echo "$CI_COMMIT_REF_NAME" | grep -q "^release-"; then
+        # Release candidate: Include RC + SHA
+        BRANCH_NAME=${CI_COMMIT_REF_NAME#release-}
+        export VERSION="${BRANCH_NAME}-RC-${CI_COMMIT_SHA:0:7}"
+      elif echo "$CI_COMMIT_REF_NAME" | grep -q "^qa/"; then
+        # QA testing: Include QA + SHA
+        BRANCH_NAME=${CI_COMMIT_REF_NAME#qa/}
+        export VERSION="${BRANCH_NAME}-QA-${CI_COMMIT_SHA:0:7}"
+      else
+        # Default: SNAPSHOT for other branches (nightly builds)
+        export VERSION="4.0.0-SNAPSHOT"
+      fi
+      echo "Computed VERSION for publishing: $VERSION"
+
+      echo "Checking Artifactory credentials..."
+      if [ -z "$ARTIFACTORY_USER" ]; then
+        echo "ERROR: ARTIFACTORY_USER is not set!"
+        echo "Please configure in GitLab: Settings → CI/CD → Variables"
+        exit 1
+      fi
+      if [ -z "$ARTIFACTORY_PASSWORD" ]; then
+        echo "ERROR: ARTIFACTORY_PASSWORD is not set!"
+        echo "Please configure in GitLab: Settings → CI/CD → Variables"
+        exit 1
+      fi
+      echo "Artifactory user: $ARTIFACTORY_USER"
+      echo "Credentials configured ✓"
+  script:
+    - ./gradlew publish $GRADLE_JVM_ARGS -Pversion=${VERSION} -Partifactory_contextUrl=${SERVER_URL:-https://artifactory.paas.bayportfinance.com}/artifactory -Partifactory_user=${ARTIFACTORY_USER} -Partifactory_password=${ARTIFACTORY_PASSWORD}
+  needs: ["build-app-gradle"]
 
 build-docker-gradle-core-java:
-  rules:
-    - if: $CI_COMMIT_TAG
-      variables:
-        VERSION: $CI_COMMIT_TAG
+  <<: *default_rules
   stage: package
   tags:
     - Runner-01
@@ -95,15 +134,65 @@ build-docker-gradle-core-java:
   services:
     - docker:19.03.1-dind
   before_script:
+    - |
+      # Debug: List what artifacts were downloaded
+      echo "=== Listing current directory structure ==="
+      ls -la
+      echo "=== Checking router directory ==="
+      ls -la router/ || echo "No router directory"
+      echo "=== Checking router/build ==="
+      ls -la router/build/ || echo "No router/build directory"
+      echo "=== Checking router/build/distributions ==="
+      ls -la router/build/distributions/ || echo "No router/build/distributions directory"
+
+      # Find the actual built zip file (try with version suffix first, then without)
+      BUILT_ZIP=$(find . -name "thecore-router-*.zip" -o -name "thecore-router.zip" | head -n 1)
+      if [ -z "$BUILT_ZIP" ]; then
+        echo "ERROR: No thecore-router zip file found!"
+        echo "Searching entire workspace for any zip files:"
+        find . -name "*.zip"
+        exit 1
+      fi
+      BUILT_APP_NAME=$(basename "$BUILT_ZIP" .zip)
+      echo "Found built artifact: $BUILT_ZIP"
+      echo "Built app name: $BUILT_APP_NAME"
+
+      # Build VERSION dynamically based on branch type for Docker tagging
+      # Convention:
+      #   Git tags (production): Use tag as-is, NO SHA (e.g., "4.0.0", "v4.0.0")
+      #   Release branches (RC): Include RC suffix + SHA (e.g., "4.0.0-RC-abc1234")
+      #   QA branches (testing): Include QA suffix + SHA (e.g., "feature-QA-abc1234")
+      #   Other branches: Use SNAPSHOT
+
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        # Production release: Use tag as-is, NO SHA appended
+        export VERSION="${CI_COMMIT_TAG}"
+      elif echo "$CI_COMMIT_REF_NAME" | grep -q "^release-"; then
+        # Release candidate: Include RC + SHA
+        BRANCH_NAME=${CI_COMMIT_REF_NAME#release-}
+        export VERSION="${BRANCH_NAME}-RC-${CI_COMMIT_SHA:0:7}"
+      elif echo "$CI_COMMIT_REF_NAME" | grep -q "^qa/"; then
+        # QA testing: Include QA + SHA
+        BRANCH_NAME=${CI_COMMIT_REF_NAME#qa/}
+        export VERSION="${BRANCH_NAME}-QA-${CI_COMMIT_SHA:0:7}"
+      else
+        # Default: SNAPSHOT for other branches (nightly builds)
+        export VERSION="4.0.0-SNAPSHOT"
+      fi
+      echo "Using Docker tag VERSION: $VERSION"
+
+      # Export for use in script
+      export BUILT_ZIP
+      export BUILT_APP_NAME
     - docker login -u "$DOCKER_REGISTRY_USER" -p "$DOCKER_REGISTRY_PASS" "$DOCK_REGISTRY"
   needs:
      - job: build-app-gradle
        artifacts: true
   script:
-    - docker build --build-arg APP_ZIP="./router/build/distributions/thecore-router-$VERSION.zip" --build-arg APP_NAME="thecore-router-$VERSION" -f Dockerfile-jdk8-service -t thecore-router:$VERSION-${CI_COMMIT_SHA:0:7} .
-    - docker tag thecore-router:$VERSION-${CI_COMMIT_SHA:0:7} "$DOCK_REGISTRY_PATH/thecore-router:$VERSION-${CI_COMMIT_SHA:0:7}"
-    - docker push "$DOCK_REGISTRY_PATH/thecore-router:$VERSION-${CI_COMMIT_SHA:0:7}"
-    - docker tag thecore-router:$VERSION-${CI_COMMIT_SHA:0:7} "$DOCK_REGISTRY_PATH/thecore-router:latest"
+    - docker build --build-arg APP_ZIP="$BUILT_ZIP" --build-arg APP_NAME="$BUILT_APP_NAME" -f Dockerfile-jdk11-service -t thecore-router:$VERSION .
+    - docker tag thecore-router:$VERSION "$DOCK_REGISTRY_PATH/thecore-router:$VERSION"
+    - docker push "$DOCK_REGISTRY_PATH/thecore-router:$VERSION"
+    - docker tag thecore-router:$VERSION "$DOCK_REGISTRY_PATH/thecore-router:latest"
     - docker push "$DOCK_REGISTRY_PATH/thecore-router:latest"
 
 
