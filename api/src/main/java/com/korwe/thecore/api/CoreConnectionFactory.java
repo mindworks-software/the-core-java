@@ -138,10 +138,8 @@ public class CoreConnectionFactory extends ConnectionFactory {
                 }
                 LOG.warn(String.format("Connection Attempt Failed: %s", n), e);
                 try {
-                    Thread.sleep(getInitialConnectionBackoffMaximum()
-                            >= (getInitialConnectionBackoff() + (n * getInitialConnectionBackoff()))
-                            ? getInitialConnectionBackoffMaximum()
-                            : getInitialConnectionBackoff() + (n * getInitialConnectionBackoff()));
+                    Thread.sleep(Math.max(getInitialConnectionBackoffMaximum(),
+                            (getInitialConnectionBackoff() + (n * getInitialConnectionBackoff()))));
                 }
                 catch (InterruptedException e1) {
                     throw new RuntimeException(e);

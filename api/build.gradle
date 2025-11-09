@@ -3,11 +3,10 @@ apply plugin: 'maven-publish'
 
 dependencies {
     api 'com.rabbitmq:amqp-client:5.16.0'
+    api 'io.zipkin.brave:brave:5.4.1'
     implementation 'org.slf4j:slf4j-api:2.0.2'
     implementation 'org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1.1'
     implementation 'com.jamesmurty.utils:java-xmlbuilder:1.3'
-    implementation group: 'io.zipkin.brave', name: 'brave', version: '5.4.1'
-
 }
 
 jar {
@@ -22,9 +21,22 @@ java {
 publishing {
     publications {
         maven(MavenPublication) {
-            artifactId = jar.archiveBaseName
+            artifactId = jar.archiveBaseName.get()
 
             from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'Artifactory'
+            def releasesRepoUrl = "${artifactory_contextUrl}/libs-release-local"
+            def snapshotsRepoUrl = "${artifactory_contextUrl}/libs-snapshot-local"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = project.findProperty('artifactory_user') ?: System.getenv('ARTIFACTORY_USER')
+                password = project.findProperty('artifactory_password') ?: System.getenv('ARTIFACTORY_PASSWORD')
+            }
         }
     }
 }

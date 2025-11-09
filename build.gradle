@@ -1,16 +1,32 @@
+ext {
+    artifactory_contextUrl = project.properties['artifactory_contextUrl'] ?:
+        'https://artifactory.paas.bayportfinance.com/artifactory'
+}
+
 allprojects {
     apply plugin: 'java'
     apply plugin: 'maven-publish'
 
-
     sourceCompatibility = JavaVersion.VERSION_11
 
     group = 'com.korwe'
-    version = '4.0.0-SNAP{SHOT'
+    version = project.hasProperty('version') ? project.property('version') : '4.0.0-SNAPSHOT'
 
     repositories {
-         mavenLocal()
-         mavenCentral()
+        mavenLocal()
+        maven {
+            url "$artifactory_contextUrl/libs-release"
+            mavenContent {
+                releasesOnly()
+            }
+        }
+        maven {
+            url "$artifactory_contextUrl/libs-snapshot"
+            mavenContent {
+                snapshotsOnly()
+            }
+        }
+        mavenCentral()
     }
 
     dependencies {

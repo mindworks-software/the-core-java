@@ -22,12 +22,12 @@ public class CoreConnectionSharingSender extends CoreSender {
 
     @Override
     public void close() {
-        LOG.info("Closing sender channel only");
-        try {
-            channel.close();
-        }
-        catch (TimeoutException | IOException e) {
-            LOG.warn("Error closing channel", e);
-        }
+        LOG.info("Not closing sender channel");
+//        try {
+//            channel.close();
+//        }
+//        catch (TimeoutException | IOException e) {
+//            LOG.warn("Error closing channel", e);
+//        }
     }
 }

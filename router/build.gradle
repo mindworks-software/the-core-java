@@ -4,12 +4,18 @@ dependencies {
     implementation 'org.apache.camel:camel-rabbitmq:3.18.1'
     implementation 'org.apache.camel:camel-spring:3.18.1'
     implementation 'org.apache.camel:camel-spring-main:3.18.1'
+    implementation 'org.apache.camel:camel-spring-xml:3.18.1'
 
 }
 
 apply plugin: 'application'
+apply plugin: 'maven-publish'
 
 mainClassName = 'com.korwe.thecore.router.CamelRouter'
+
+java {
+    withSourcesJar()
+}
 
 dependencies {
     runtimeOnly project(':api')
@@ -28,5 +34,28 @@ startScripts {
         def unixScriptFile    = file getUnixScript()
         windowsScriptFile.text = windowsScriptFile.text.replace('%APP_HOME%\\lib\\__CONF__', '%APP_HOME%\\conf')
         unixScriptFile.text  = unixScriptFile.text.replace('$APP_HOME/lib/__CONF__', '$APP_HOME/conf')
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'thecore-router'
+
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'Artifactory'
+            def releasesRepoUrl = "${artifactory_contextUrl}/libs-release-local"
+            def snapshotsRepoUrl = "${artifactory_contextUrl}/libs-snapshot-local"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = project.findProperty('artifactory_user') ?: System.getenv('ARTIFACTORY_USER')
+                password = project.findProperty('artifactory_password') ?: System.getenv('ARTIFACTORY_PASSWORD')
+            }
+        }
     }
 }
