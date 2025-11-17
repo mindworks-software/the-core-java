@@ -24,7 +24,12 @@ import com.rabbitmq.client.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
@@ -55,6 +60,13 @@ public class CoreConnectionFactory extends ConnectionFactory {
     private int initialConnectionRetries = DEFAULT_INITIAL_CONNECTION_RETRIES;
     private int initialConnectionBackoff = DEFAULT_INITIAL_CONNECTION_BACKOFF;
     private int initialConnectionBackoffMaximum = DEFAULT_INITIAL_CONNECTION_BACKOFF_MAXIMUM;
+
+    // SSL/TLS fields
+    private boolean useSsl = false;
+    private String trustStorePath;
+    private String trustStorePassword;
+    private String sslProtocol = "TLSv1.2";
+    private boolean sslConfigured = false;
 
     public CoreConnectionFactory() {
     }
@@ -113,10 +125,126 @@ public class CoreConnectionFactory extends ConnectionFactory {
         this.initialConnectionBackoffMaximum = initialConnectionBackoffMaximum;
     }
 
+    /**
+     * Enable SSL/TLS for connections.
+     * Note: Set trustStorePath and trustStorePassword BEFORE calling this method.
+     *
+     * SSL configuration is performed lazily in newConnection() to avoid
+     * Spring property order issues.
+     *
+     * @param useSsl true to enable TLS
+     * @since 4.0.2
+     */
+    public void setUseSsl(boolean useSsl) {
+        this.useSsl = useSsl;
+        // Don't configure SSL here - do it lazily in newConnection()
+        // This avoids Spring property order problems
+    }
+
+    public boolean isUseSsl() {
+        return useSsl;
+    }
+
+    /**
+     * Set path to JKS trust store containing CA certificate.
+     *
+     * @param trustStorePath absolute path to trust store file
+     * @since 4.0.2
+     */
+    public void setTrustStorePath(String trustStorePath) {
+        this.trustStorePath = trustStorePath;
+    }
+
+    public String getTrustStorePath() {
+        return trustStorePath;
+    }
+
+    /**
+     * Set trust store password.
+     *
+     * @param trustStorePassword password for trust store
+     * @since 4.0.2
+     */
+    public void setTrustStorePassword(String trustStorePassword) {
+        this.trustStorePassword = trustStorePassword;
+    }
+
+    /**
+     * Set SSL protocol version.
+     *
+     * @param sslProtocol "TLSv1.2", "TLSv1.3", or "TLS"
+     * @since 4.0.2
+     */
+    public void setSslProtocol(String sslProtocol) {
+        this.sslProtocol = sslProtocol;
+    }
+
+    public String getSslProtocol() {
+        return sslProtocol;
+    }
+
+    /**
+     * Create SSLContext with custom trust store.
+     * This is the CRITICAL method that actually loads your certificates.
+     */
+    private SSLContext createSslContext() throws Exception {
+        // Load the JKS trust store
+        KeyStore trustStore = KeyStore.getInstance("JKS");
+        try (FileInputStream fis = new FileInputStream(trustStorePath)) {
+            char[] passwordChars = trustStorePassword != null ?
+                trustStorePassword.toCharArray() : null;
+            trustStore.load(fis, passwordChars);
+        }
+
+        // Initialize trust manager factory with the trust store
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+            TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(trustStore);
+
+        // Create and initialize SSL context
+        SSLContext sslContext = SSLContext.getInstance(sslProtocol);
+        sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
+
+        return sslContext;
+    }
+
+    /**
+     * Configure SSL if enabled.
+     * Called lazily from newConnection() to avoid property order issues.
+     */
+    private void configureSslIfNeeded() throws IOException {
+        if (!useSsl) {
+            return;
+        }
+
+        // Check if SSL already configured
+        if (sslConfigured) {
+            return;
+        }
+
+        try {
+            if (trustStorePath != null && !trustStorePath.isEmpty()) {
+                // Use custom trust store
+                LOG.info("Configuring SSL/TLS with custom trust store: {}", trustStorePath);
+                SSLContext sslContext = createSslContext();
+                useSslProtocol(sslContext);
+            } else {
+                // Use default JVM trust store
+                LOG.info("Configuring SSL/TLS with default JVM trust store");
+                useSslProtocol(sslProtocol);
+            }
+            sslConfigured = true;
+        } catch (Exception e) {
+            throw new IOException("Failed to configure SSL/TLS: " + e.getMessage(), e);
+        }
+    }
+
     @Override
     public Connection newConnection(ExecutorService executor, AddressResolver addressResolver,
                                     String clientProvidedName) throws IOException,
                                                                       TimeoutException {
+        // Configure SSL lazily (avoids Spring property order issues)
+        configureSslIfNeeded();
         if (getInitialConnectionRetries() == 0) {
             return super.newConnection(executor, addressResolver, clientProvidedName);
         }

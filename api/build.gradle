@@ -2,7 +2,7 @@ apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
 dependencies {
-    api 'com.rabbitmq:amqp-client:5.16.0'
+    api 'com.rabbitmq:amqp-client:5.26.0'  // Updated from 5.16.0 for RabbitMQ 4.1.x support
     api 'io.zipkin.brave:brave:5.4.1'
     implementation 'org.slf4j:slf4j-api:2.0.2'
     implementation 'org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1.1'

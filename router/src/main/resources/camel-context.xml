@@ -23,11 +23,35 @@
   <bean id="coreTracer" class="com.korwe.thecore.router.CoreTracer"/>
 
 
+  <!-- Standard ConnectionFactory -->
   <bean id="rabbitConnectionFactory" class="com.rabbitmq.client.ConnectionFactory">
     <property name="host" value="${amqp.host}"/>
     <property name="port" value="${amqp.port}"/>
     <property name="username" value="${amqp.user}"/>
     <property name="password" value="${amqp.pass}"/>
     <property name="virtualHost" value="${amqp.vhost}"/>
+  </bean>
+
+  <!-- SSL Context Factory (Phase 3) -->
+  <bean id="sslContextFactory" class="com.korwe.thecore.router.SslContextFactory">
+    <property name="trustStorePath" value="${amqp.ssl.truststore.path:}"/>
+    <property name="trustStorePassword" value="${amqp.ssl.truststore.password:}"/>
+    <property name="sslProtocol" value="${amqp.ssl.protocol:TLSv1.2}"/>
+  </bean>
+
+  <!-- Apply SSL if enabled (Phase 3) -->
+  <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="rabbitConnectionFactory"/>
+    <property name="targetMethod" value="useSslProtocol"/>
+    <property name="arguments">
+      <list>
+        <bean factory-bean="sslContextFactory" factory-method="createSslContext"/>
+      </list>
+    </property>
+  </bean>
+
+  <!-- Camel RabbitMQ Component -->
+  <bean id="rabbitmq" class="org.apache.camel.component.rabbitmq.RabbitMQComponent">
+    <property name="connectionFactory" ref="rabbitConnectionFactory"/>
   </bean>
 </beans>
