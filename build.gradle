@@ -10,7 +10,7 @@ allprojects {
     sourceCompatibility = JavaVersion.VERSION_11
 
     group = 'com.korwe'
-    version = project.hasProperty('version') ? project.property('version') : '4.0.0-SNAPSHOT'
+    version = (project.hasProperty('version') && project.version != 'unspecified') ? project.version : '4.1.0-SNAPSHOT'
 
     repositories {
         mavenLocal()
